@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'reference-agents/*'
+
+allowBuilds:
+  '@sentry/cli': true
+  esbuild: true
+  protobufjs: true
+  sharp: true

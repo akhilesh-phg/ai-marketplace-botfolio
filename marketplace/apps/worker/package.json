@@ -1,0 +1,27 @@
+{
+  "name": "@t/worker",
+  "type": "module",
+  "exports": {
+    ".": "./src/serve.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "dev": "INNGEST_DEV=1 tsx watch src/server.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.14",
+    "@t/config": "workspace:*",
+    "@t/contracts": "workspace:*",
+    "hono": "^4.12.24",
+    "inngest": "^4.5.0"
+  },
+  "devDependencies": {
+    "@inngest/test": "^1.0.0",
+    "@types/node": "^25.9.2",
+    "tsx": "^4.22.4",
+    "vitest": "^4.1.8"
+  }
+}

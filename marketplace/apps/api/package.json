@@ -1,0 +1,29 @@
+{
+  "name": "@t/api",
+  "type": "module",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "dev": "tsx watch src/server.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.14",
+    "@hono/zod-openapi": "^1.4.0",
+    "@sentry/node": "^10.56.0",
+    "@supabase/supabase-js": "^2.108.0",
+    "@t/config": "workspace:*",
+    "@t/contracts": "workspace:*",
+    "@t/shared": "workspace:*",
+    "hono": "^4.12.24"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "tsx": "^4.22.4",
+    "vitest": "^4.1.8"
+  }
+}

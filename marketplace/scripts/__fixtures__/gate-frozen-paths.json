@@ -1,0 +1,27 @@
+[
+  {
+    "name": "composer+frozen=fail",
+    "modelEnv": "composer",
+    "branch": "composer/p0-04-contracts",
+    "latestCommitBody": "Model: composer-2.5",
+    "changedFiles": ["packages/contracts/health.ts"],
+    "expectExit": 1,
+    "expectMessage": "ESCALATE TO OPUS: packages/contracts/health.ts is frozen"
+  },
+  {
+    "name": "composer+ok=pass",
+    "modelEnv": "composer",
+    "branch": "composer/p0-12-governance",
+    "latestCommitBody": "Model: composer-2.5",
+    "changedFiles": ["scripts/session-banner.ts"],
+    "expectExit": 0
+  },
+  {
+    "name": "opus+frozen=pass",
+    "modelEnv": "opus",
+    "branch": "opus/contracts-update",
+    "latestCommitBody": "Model: opus-4.8",
+    "changedFiles": ["packages/contracts/health.ts"],
+    "expectExit": 0
+  }
+]

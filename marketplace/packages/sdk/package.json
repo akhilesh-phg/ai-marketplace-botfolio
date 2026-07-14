@@ -1,0 +1,24 @@
+{
+  "name": "@t/sdk",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "sdk:gen": "openapi-typescript openapi.json -o src/generated/schema.d.ts"
+  },
+  "dependencies": {
+    "@t/contracts": "workspace:*",
+    "openapi-fetch": "^0.14.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "dotenv": "^17.4.2",
+    "openapi-typescript": "^7.13.0",
+    "vitest": "^4.1.8"
+  }
+}

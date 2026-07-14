@@ -1,0 +1,30 @@
+[
+  {
+    "name": "new-symbol+no-spec=fail",
+    "diff": "+export function newThing() {}\n",
+    "commitBodies": ["feat: add thing\n\nModel: composer-2.5"],
+    "registry": ["P0-01"],
+    "expectExit": 1
+  },
+  {
+    "name": "new-symbol+valid-spec=pass",
+    "diff": "+export function newThing() {}\n",
+    "commitBodies": ["feat: add thing\n\nModel: composer-2.5\nSpec: P0-12"],
+    "registry": ["P0-12"],
+    "expectExit": 0
+  },
+  {
+    "name": "no-new-symbol=pass",
+    "diff": "+const x = 1;\n",
+    "commitBodies": ["chore: tweak\n\nModel: composer-2.5"],
+    "registry": ["P0-01"],
+    "expectExit": 0
+  },
+  {
+    "name": "spec-not-in-registry=fail",
+    "diff": "+export const NEW = 1;\n",
+    "commitBodies": ["feat\n\nSpec: P9-99"],
+    "registry": ["P0-01"],
+    "expectExit": 1
+  }
+]

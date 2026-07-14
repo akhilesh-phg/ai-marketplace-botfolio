@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  pull_request:
+
+# CI has no production secrets. These dummy, schema-valid values let the config
+# env parser succeed and let the e2e dev servers boot. The API /health route is
+# static and the web app only constructs (never calls out to) a Supabase client,
+# so dummy values are sufficient. Real secrets live only in deployment envs.
+env:
+  DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+  SUPABASE_URL: https://example.supabase.co
+  SUPABASE_ANON_KEY: ci-anon-key
+  SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+  NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+  R2_ACCOUNT_ID: ci-account
+  R2_ACCESS_KEY_ID: ci-access-key
+  R2_SECRET_ACCESS_KEY: ci-secret-key
+  R2_BUCKET: ci-bucket
+  R2_ENDPOINT: https://r2.example.com
+  INNGEST_EVENT_KEY: ci-inngest-event
+  INNGEST_SIGNING_KEY: ci-inngest-signing
+  SENTRY_DSN: https://public@example.ingest.sentry.io/1
+  DATADOG_API_KEY: ci-datadog
+  RESEND_API_KEY: ci-resend
+  OPENAI_API_KEY: ci-openai
+  ANTHROPIC_API_KEY: ci-anthropic
+  API_BASE_URL: http://localhost:8787
+  NEXT_PUBLIC_API_BASE_URL: http://localhost:8787
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+  quality:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm build
+
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:coverage
+
+  e2e:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install chromium
+      - run: pnpm test:e2e
+
+  gate-frozen:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Resolve MODEL from branch prefix
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          if [[ "$BRANCH" == composer/* ]]; then
+            echo "MODEL=composer" >> "$GITHUB_ENV"
+          elif [[ "$BRANCH" == opus/* ]]; then
+            echo "MODEL=opus" >> "$GITHUB_ENV"
+          elif [[ "$BRANCH" == human/* ]]; then
+            echo "MODEL=human" >> "$GITHUB_ENV"
+          fi
+      - run: pnpm gate:frozen-paths --base origin/${{ github.base_ref }}
+
+  gate-decide:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm gate:no-new-decisions --base origin/${{ github.base_ref }}
+
+  gate-grade:
+    needs: setup
+    if: contains(github.event.pull_request.labels.*.name, 'spec')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require architecture grade artifact
+        run: |
+          SLICE_ID="${{ github.head_ref }}"
+          SLICE_ID="${SLICE_ID##*/}"
+          SLICE_ID="${SLICE_ID^^}"
+          SLICE_ID=$(echo "$SLICE_ID" | sed -E 's/^P0-([0-9]+)-.*/P0-\1/')
+          test -f ".grades/${SLICE_ID}-arch.md" || (echo "Missing .grades/${SLICE_ID}-arch.md" && exit 1)
+          grep -q "Gate verdict: PASS" ".grades/${SLICE_ID}-arch.md" || (echo "Architecture grade did not pass" && exit 1)
+
+  gate-review:
+    needs: setup
+    if: contains(github.event.pull_request.labels.*.name, 'code')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require code review artifact without P0/P1
+        run: |
+          SLICE_ID="${{ github.head_ref }}"
+          SLICE_ID="${SLICE_ID##*/}"
+          SLICE_ID="${SLICE_ID^^}"
+          SLICE_ID=$(echo "$SLICE_ID" | sed -E 's/^P0-([0-9]+)-.*/P0-\1/')
+          test -f ".reviews/${SLICE_ID}.md" || (echo "Missing .reviews/${SLICE_ID}.md" && exit 1)
+          if grep -q '\bP0\b' ".reviews/${SLICE_ID}.md" || grep -q '\bP1\b' ".reviews/${SLICE_ID}.md"; then
+            echo "Review contains blocking P0/P1 findings"
+            exit 1
+          fi

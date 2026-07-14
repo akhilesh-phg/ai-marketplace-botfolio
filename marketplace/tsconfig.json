@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "vitest.config.ts",
+    "vitest.workspace.ts",
+    "e2e/**/*.ts",
+    "scripts/**/*.ts",
+    "eslint.config.mjs"
+  ],
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "allowJs": true
+  }
+}
